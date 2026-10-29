@@ -9,9 +9,9 @@ on:
 
 jobs:
   computer-tests:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
       - name: Run the TeachMath tests
         run: |
           cd extras/tests
@@ -19,7 +19,7 @@ jobs:
           ./test_math
 
   compile:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     strategy:
       fail-fast: false
       matrix:
@@ -85,7 +85,7 @@ jobs:
               - examples/Arduino/4_SwingAnalyser
               - examples/Arduino/4_TurnRobot
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
       - uses: arduino/compile-sketches@v1
         with:
           fqbn: ${{ matrix.fqbn }}
