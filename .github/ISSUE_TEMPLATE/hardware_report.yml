@@ -1,0 +1,73 @@
+name: Hardware test report
+description: Tell us how an example worked on your real board.
+title: "[Hardware report] "
+labels: ["hardware report"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thank you for testing on real hardware. This library was written and
+        tested by AI on a computer only, so every report helps. Reports that
+        say "it did not work" are just as useful as "it worked".
+  - type: dropdown
+    id: board
+    attributes:
+      label: Board
+      options:
+        - ESP32 (ESP-WROVER-KIT)
+        - ESP32 (other board — name it below)
+        - Arduino UNO R3
+        - Arduino UNO R4 Minima
+        - Arduino UNO R4 WiFi
+        - Other (name it below)
+    validations:
+      required: true
+  - type: input
+    id: board-details
+    attributes:
+      label: Board details
+      description: Exact board name, and the sensor board (for example GY-521).
+      placeholder: "ESP32-DevKitC, GY-521"
+    validations:
+      required: false
+  - type: input
+    id: example
+    attributes:
+      label: Example
+      description: Which example did you run?
+      placeholder: "1b_SelfTest"
+    validations:
+      required: true
+  - type: dropdown
+    id: result
+    attributes:
+      label: Result
+      options:
+        - Worked as described
+        - Worked, with problems (describe below)
+        - Did not work
+    validations:
+      required: true
+  - type: textarea
+    id: serial-output
+    attributes:
+      label: Serial Monitor output
+      description: Copy the text from the Serial Monitor. For 1b_SelfTest, include the coverage lines at the end.
+      render: text
+    validations:
+      required: false
+  - type: textarea
+    id: notes
+    attributes:
+      label: What happened, and anything else we should know
+      description: Wiring, pins used, power supply, other parts connected.
+    validations:
+      required: false
+  - type: input
+    id: versions
+    attributes:
+      label: Versions
+      description: Library version, Arduino IDE version, board package version.
+      placeholder: "MPU6050Classroom 1.0.0, IDE 2.3.x, esp32 3.3.x"
+    validations:
+      required: false

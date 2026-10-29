@@ -1,0 +1,47 @@
+<svg xmlns='http://www.w3.org/2000/svg' width='760' height='400' viewBox='0 0 760 400' font-family='Helvetica, Arial, sans-serif'>
+<rect width='760' height='400' rx='14' fill='#ffffff' stroke='#d0d7de'/>
+<rect x='40' y='50' width='210' height='300' rx='10' fill='#1f4e8c'/>
+<rect x='110' y='170' width='60' height='60' rx='4' fill='#24292f'/>
+<text x='140' y='205' fill='#ffffff' font-size='11' text-anchor='middle'>MPU-6050</text>
+<text x='140' y='78' fill='#ffffff' font-size='15' font-weight='bold' text-anchor='middle'>GY-521 sensor board</text>
+<circle cx='236' cy='110' r='7' fill='#e3b341' stroke='#ffffff' stroke-width='1.5'/>
+<text x='222' y='115' fill='#ffffff' font-size='13' text-anchor='end'>VCC</text>
+<circle cx='236' cy='140' r='7' fill='#e3b341' stroke='#ffffff' stroke-width='1.5'/>
+<text x='222' y='145' fill='#ffffff' font-size='13' text-anchor='end'>GND</text>
+<circle cx='236' cy='170' r='7' fill='#e3b341' stroke='#ffffff' stroke-width='1.5'/>
+<text x='222' y='175' fill='#ffffff' font-size='13' text-anchor='end'>SCL</text>
+<circle cx='236' cy='200' r='7' fill='#e3b341' stroke='#ffffff' stroke-width='1.5'/>
+<text x='222' y='205' fill='#ffffff' font-size='13' text-anchor='end'>SDA</text>
+<circle cx='236' cy='230' r='7' fill='#8c959f' stroke='#ffffff' stroke-width='1.5'/>
+<text x='222' y='235' fill='#ffffff' font-size='13' text-anchor='end'>XDA</text>
+<circle cx='236' cy='260' r='7' fill='#8c959f' stroke='#ffffff' stroke-width='1.5'/>
+<text x='222' y='265' fill='#ffffff' font-size='13' text-anchor='end'>XCL</text>
+<circle cx='236' cy='290' r='7' fill='#8c959f' stroke='#ffffff' stroke-width='1.5'/>
+<text x='222' y='295' fill='#ffffff' font-size='13' text-anchor='end'>AD0</text>
+<circle cx='236' cy='320' r='7' fill='#e3b341' stroke='#ffffff' stroke-width='1.5'/>
+<text x='222' y='325' fill='#ffffff' font-size='13' text-anchor='end'>INT</text>
+<rect x='500' y='50' width='220' height='300' rx='10' fill='#f6f8fa' stroke='#1f2328' stroke-width='2'/>
+<text x='610.0' y='78' fill='#1f2328' font-size='15' font-weight='bold' text-anchor='middle'>ESP32 board</text>
+<text x='610.0' y='98' fill='#57606a' font-size='12' text-anchor='middle'>example: ESP-WROVER-KIT</text>
+<path d='M243,110 H300 V135 H507' fill='none' stroke='#d1242f' stroke-width='5' stroke-linejoin='round'/>
+<circle cx='514' cy='135' r='7' fill='#e3b341' stroke='#1f2328' stroke-width='1.5'/>
+<text x='530' y='140' fill='#1f2328' font-size='14' font-weight='bold'>3V3</text>
+<text x='488' y='126' fill='#d1242f' font-size='12' font-weight='bold' text-anchor='end'>VCC</text>
+<path d='M243,140 H330 V180 H507' fill='none' stroke='#1f2328' stroke-width='5' stroke-linejoin='round'/>
+<circle cx='514' cy='180' r='7' fill='#e3b341' stroke='#1f2328' stroke-width='1.5'/>
+<text x='530' y='185' fill='#1f2328' font-size='14' font-weight='bold'>GND</text>
+<text x='488' y='171' fill='#1f2328' font-size='12' font-weight='bold' text-anchor='end'>GND</text>
+<path d='M243,170 H360 V225 H507' fill='none' stroke='#bf8700' stroke-width='5' stroke-linejoin='round'/>
+<circle cx='514' cy='225' r='7' fill='#e3b341' stroke='#1f2328' stroke-width='1.5'/>
+<text x='530' y='230' fill='#1f2328' font-size='14' font-weight='bold'>GPIO22  (SENSOR_SCL)</text>
+<text x='488' y='216' fill='#bf8700' font-size='12' font-weight='bold' text-anchor='end'>SCL</text>
+<path d='M243,200 H390 V270 H507' fill='none' stroke='#0969da' stroke-width='5' stroke-linejoin='round'/>
+<circle cx='514' cy='270' r='7' fill='#e3b341' stroke='#1f2328' stroke-width='1.5'/>
+<text x='530' y='275' fill='#1f2328' font-size='14' font-weight='bold'>GPIO21  (SENSOR_SDA)</text>
+<text x='488' y='261' fill='#0969da' font-size='12' font-weight='bold' text-anchor='end'>SDA</text>
+<path d='M243,320 H420 V315 H507' fill='none' stroke='#1a7f37' stroke-width='5' stroke-linejoin='round' stroke-dasharray='8 6'/>
+<circle cx='514' cy='315' r='7' fill='#e3b341' stroke='#1f2328' stroke-width='1.5'/>
+<text x='530' y='320' fill='#1f2328' font-size='14' font-weight='bold'>GPIO27</text>
+<text x='488' y='306' fill='#1a7f37' font-size='12' font-weight='bold' text-anchor='end'>INT (optional)</text>
+<text x='380.0' y='382' fill='#57606a' font-size='12' text-anchor='middle'>Other ESP32 boards: any free pins work for SDA and SCL. Set them in the two pin lines of each sketch.</text>
+</svg>

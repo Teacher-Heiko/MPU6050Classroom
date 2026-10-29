@@ -1,0 +1,331 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Teacup Viewer</title>
+<!-- MPU6050Classroom teacup viewer. Open this file in Chrome or Edge (double-click).
+     Needs the internet once, to load the Three.js graphics library. -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<style>
+  /* Committed single dark look: a 3D stage. Tokens up top. */
+  :root{
+    --bg:#101418; --panel:#1a2026; --fg:#e8ecef; --muted:#8fa0ad;
+    --accent:#4fb6a8; --warn:#e0a84f; --mono:"Consolas","Menlo",monospace;
+  }
+  *{box-sizing:border-box}
+  html,body{height:100%;margin:0}
+  body{background:var(--bg);color:var(--fg);
+       font:15px/1.5 system-ui,"Segoe UI",sans-serif;
+       display:flex;flex-direction:column}
+  header{display:flex;flex-wrap:wrap;gap:10px;align-items:center;
+         padding:12px max(16px,env(safe-area-inset-right,0px)) 12px max(16px,env(safe-area-inset-left,0px));
+         background:var(--panel)}
+  header h1{font-size:17px;margin:0 12px 0 0;font-weight:600;letter-spacing:.3px}
+  button{font:inherit;color:var(--bg);background:var(--accent);border:0;
+         border-radius:6px;padding:7px 16px;cursor:pointer}
+  button.secondary{background:transparent;color:var(--fg);
+                   border:1px solid var(--muted)}
+  button:disabled{opacity:.45;cursor:default}
+  #status{color:var(--muted);font-family:var(--mono);font-size:13px}
+  #stage{flex:1;min-height:0}
+  canvas{display:block}
+  footer{display:flex;flex-wrap:wrap;gap:4px 24px;
+         padding:10px max(16px,env(safe-area-inset-right,0px)) 10px max(16px,env(safe-area-inset-left,0px));
+         background:var(--panel);font-family:var(--mono);font-size:13px}
+  footer span b{color:var(--accent);font-weight:600}
+  #help{color:var(--muted);padding:6px max(16px,env(safe-area-inset-left,0px));font-size:13px}
+</style>
+</head>
+<body>
+<header>
+  <h1>Teacup Viewer</h1>
+  <button id="connect">Connect board</button>
+  <button id="demo" class="secondary">Demo mode</button>
+  <button id="swap" class="secondary">Show airplane</button>
+  <span id="status">not connected</span>
+</header>
+<div id="help">Upload the 1d_Teapot example first, then click <b>Connect board</b> and
+pick the board's serial port. No board yet? Click <b>Demo mode</b>.</div>
+<div id="stage"></div>
+<footer>
+  <span>quaternion <b id="q">1.00&nbsp; 0.00&nbsp; 0.00&nbsp; 0.00</b></span>
+  <span>yaw <b id="yaw">0.0</b>&deg;</span>
+  <span>pitch <b id="pitch">0.0</b>&deg;</span>
+  <span>roll <b id="roll">0.0</b>&deg;</span>
+  <span>packets/s <b id="rate">0</b></span>
+</footer>
+
+<script>
+"use strict";
+// ---------------- 3D scene: a teapot or an airplane ----------------
+const stage = document.getElementById("stage");
+const scene = new THREE.Scene();
+scene.background = new THREE.Color(0x101418);
+const camera = new THREE.PerspectiveCamera(42, 1, 0.1, 100);
+camera.position.set(0, 2.2, 6);
+camera.lookAt(0, 0.4, 0);
+const renderer = new THREE.WebGLRenderer({antialias: true});
+stage.appendChild(renderer.domElement);
+
+scene.add(new THREE.HemisphereLight(0xcfe8ff, 0x20150c, 0.9));
+const key = new THREE.DirectionalLight(0xffffff, 0.8);
+key.position.set(3, 5, 4);
+scene.add(key);
+
+const china = new THREE.MeshStandardMaterial({color: 0xf2ece2, roughness: 0.35, metalness: 0.05});
+const band  = new THREE.MeshStandardMaterial({color: 0x4fb6a8, roughness: 0.4});
+const tea   = new THREE.MeshStandardMaterial({color: 0x7a4a21, roughness: 0.2});
+
+// One holder for both models, so the board's rotation moves whichever is showing.
+const model = new THREE.Group();
+model.scale.setScalar(0.8);
+
+// ----- Teapot (origin at the middle of the body) -----
+const teapot = new THREE.Group();
+teapot.position.y = -1.15;
+
+// Body: lathe a profile curve (radius, height) pairs
+const bodyProfile = [[0,0],[0.7,0],[1.1,0.15],[1.4,0.6],[1.5,1.1],[1.35,1.6],[1.0,1.9],[0.75,2.0],[0,2.0]]
+  .map(p => new THREE.Vector2(p[0], p[1]));
+teapot.add(new THREE.Mesh(new THREE.LatheGeometry(bodyProfile, 48), china));
+
+// Lid and knob
+const lidProfile = [[0,2.0],[0.8,2.0],[0.7,2.12],[0.4,2.27],[0,2.32]]
+  .map(p => new THREE.Vector2(p[0], p[1]));
+teapot.add(new THREE.Mesh(new THREE.LatheGeometry(lidProfile, 48), china));
+const knob = new THREE.Mesh(new THREE.SphereGeometry(0.13, 20, 14), band);
+knob.position.y = 2.38;
+teapot.add(knob);
+
+// Coloured band around the belly
+const potBand = new THREE.Mesh(new THREE.TorusGeometry(1.5, 0.04, 12, 48), band);
+potBand.rotation.x = Math.PI / 2;
+potBand.position.y = 1.1;
+teapot.add(potBand);
+
+// Handle: arc of a torus on the +X side
+const handleArc = Math.PI * 1.2;
+const potHandle = new THREE.Mesh(new THREE.TorusGeometry(0.55, 0.1, 14, 36, handleArc), china);
+potHandle.position.set(1.45, 1.1, 0);
+potHandle.rotation.z = -handleArc / 2;
+teapot.add(potHandle);
+
+// Spout: tapered tube leaning out on the -X side
+const spout = new THREE.Mesh(new THREE.CylinderGeometry(0.13, 0.3, 1.5, 24), china);
+spout.position.set(-1.84, 1.07, 0);
+spout.rotation.z = 0.9;
+teapot.add(spout);
+
+// ----- Airplane (nose toward +X, wings along Z, fin up) -----
+const plane = new THREE.Group();
+plane.visible = false;
+
+function flatPart(points, thickness) {
+  const shape = new THREE.Shape(points.map(p => new THREE.Vector2(p[0], p[1])));
+  return new THREE.ExtrudeGeometry(shape, {depth: thickness, bevelEnabled: false});
+}
+
+const fuselage = new THREE.Mesh(new THREE.CylinderGeometry(0.3, 0.3, 2.6, 24), china);
+fuselage.rotation.z = -Math.PI / 2;
+plane.add(fuselage);
+
+const noseCone = new THREE.Mesh(new THREE.ConeGeometry(0.3, 0.8, 24), band);
+noseCone.rotation.z = -Math.PI / 2;
+noseCone.position.x = 1.7;
+plane.add(noseCone);
+
+const tailCone = new THREE.Mesh(new THREE.ConeGeometry(0.3, 1.0, 24), china);
+tailCone.rotation.z = Math.PI / 2;
+tailCone.position.x = -1.8;
+plane.add(tailCone);
+
+const cockpit = new THREE.Mesh(new THREE.SphereGeometry(0.2, 20, 14), tea);
+cockpit.scale.set(1.5, 0.7, 0.9);
+cockpit.position.set(0.95, 0.22, 0);
+plane.add(cockpit);
+
+// Swept wings (flat shape lying in the X-Z plane)
+const wingGeo = flatPart([[0.7,0],[-0.2,2],[-0.55,2],[-0.55,-2],[-0.2,-2]], 0.07);
+wingGeo.rotateX(-Math.PI / 2);
+wingGeo.translate(0, -0.035, 0);
+const wings = new THREE.Mesh(wingGeo, band);
+wings.position.set(0.1, -0.08, 0);
+plane.add(wings);
+
+// Small horizontal tail
+const tailplane = new THREE.Mesh(wingGeo, band);
+tailplane.scale.set(0.45, 1, 0.4);
+tailplane.position.set(-1.5, 0, 0);
+plane.add(tailplane);
+
+// Vertical fin
+const finGeo = flatPart([[0.25,0.1],[-0.15,1.0],[-0.5,1.0],[-0.5,0.1]], 0.06);
+finGeo.translate(0, 0, -0.03);
+const fin = new THREE.Mesh(finGeo, band);
+fin.position.x = -1.3;
+plane.add(fin);
+
+model.add(teapot);
+model.add(plane);
+scene.add(model);
+
+function resize() {
+  const w = stage.clientWidth, h = stage.clientHeight;
+  renderer.setSize(w, h);
+  renderer.setPixelRatio(Math.min(2, window.devicePixelRatio));
+  camera.aspect = w / h;
+  camera.updateProjectionMatrix();
+}
+window.addEventListener("resize", resize);
+
+// ---------------- orientation state ----------------
+let q = new THREE.Quaternion(0, 0, 0, 1);   // three.js order: x,y,z,w
+let demo = false, demoT = 0, packetCount = 0;
+
+function setFromSensor(w, x, y, z) {
+  // Sensor frame: Z up. Three.js frame: Y up. Map (x,y,z) -> (x, z, -y).
+  q.set(x, z, -y, w).normalize();
+  updateReadout(w, x, y, z);
+}
+
+function updateReadout(w, x, y, z) {
+  document.getElementById("q").textContent =
+    [w, x, y, z].map(v => v.toFixed(2)).join("  ");
+  const gx = 2 * (x * z - w * y);
+  const gy = 2 * (w * x + y * z);
+  const gz = w * w - x * x - y * y + z * z;
+  let yaw = Math.atan2(2 * x * y - 2 * w * z, 2 * w * w + 2 * x * x - 1);
+  let pitch = Math.atan2(gx, Math.sqrt(gy * gy + gz * gz));
+  let roll = Math.atan2(gy, gz);
+  if (gz < 0) pitch = pitch > 0 ? Math.PI - pitch : -Math.PI - pitch;
+  const d = 180 / Math.PI;
+  document.getElementById("yaw").textContent   = (yaw * d).toFixed(1);
+  document.getElementById("pitch").textContent = (pitch * d).toFixed(1);
+  document.getElementById("roll").textContent  = (roll * d).toFixed(1);
+}
+
+function animate() {
+  requestAnimationFrame(animate);
+  if (demo) {
+    demoT += 0.01;
+    const e = new THREE.Euler(0.4 * Math.sin(demoT), demoT * 0.6, 0.3 * Math.sin(demoT * 1.3));
+    q.setFromEuler(e);
+    // Show the same numbers a real board would give (inverse of the sensor -> three.js map).
+    updateReadout(q.w, q.x, -q.z, q.y);
+  }
+  // Behind-the-airplane view: roll and pitch are mirrored, so flip both for the airplane only (yaw unchanged).
+  const target = plane.visible ? new THREE.Quaternion(-q.x, q.y, -q.z, q.w) : q;
+  model.quaternion.slerp(target, 0.3);   // light smoothing
+  renderer.render(scene, camera);
+}
+resize(); animate();
+setInterval(() => {
+  document.getElementById("rate").textContent = packetCount;
+  packetCount = 0;
+}, 1000);
+
+// ---------------- switch between teapot and airplane ----------------
+const swapBtn = document.getElementById("swap");
+let showPlane = false;
+swapBtn.addEventListener("click", () => {
+  showPlane = !showPlane;
+  teapot.visible = !showPlane;
+  plane.visible = showPlane;
+  swapBtn.textContent = showPlane ? "Show teapot" : "Show airplane";
+  // Airplane: view from behind (nose points away at yaw 0). The camera moves, the
+  // model keeps its sensor axes, so pitch stays pitch and roll stays roll.
+  if (showPlane) camera.position.set(-6, 2.2, 0); else camera.position.set(0, 2.2, 6);
+  camera.lookAt(0, 0.4, 0);
+});
+
+// ---------------- Web Serial: parse 14-byte teapot packets ----------------
+const statusEl = document.getElementById("status");
+const connectBtn = document.getElementById("connect");
+
+document.getElementById("demo").addEventListener("click", () => {
+  demo = !demo;
+  statusEl.textContent = demo ? "demo mode (no board)" : "demo off";
+});
+
+connectBtn.addEventListener("click", async () => {
+  if (!("serial" in navigator)) {
+    statusEl.textContent = "this browser has no Web Serial — use Chrome or Edge";
+    return;
+  }
+  let port;
+  try {
+    port = await navigator.serial.requestPort();
+  } catch (err) {
+    // NotFoundError = the picker was closed, or its list was empty.
+    statusEl.textContent = (err && err.name === "NotFoundError")
+      ? "no port chosen. If the list was empty: close Arduino Serial Monitor and Plotter, " +
+        "use a data USB cable, unplug and replug the board, then click Connect board again."
+      : "could not show the port list: " + err.message;
+    return;
+  }
+  try {
+    await port.open({baudRate: 115200});
+  } catch (err) {
+    statusEl.textContent = "could not open the port (another program may be using it — " +
+      "close Arduino Serial Monitor): " + err.message;
+    return;
+  }
+  demo = false;
+  connectBtn.disabled = true;
+  readLoop(port);
+});
+
+// Loud status: say exactly what has (and has not) arrived from the board.
+let bytesSeen = 0, packetsSeen = 0, connectedAt = 0, watchTimer = null;
+function watchStatus() {
+  const secs = (Date.now() - connectedAt) / 1000;
+  if (packetsSeen > 0) {
+    statusEl.textContent = "connected — move the board";
+  } else if (secs < 10) {
+    statusEl.textContent = "connected — the board may restart and calibrate: keep it flat and still for about 8 seconds";
+  } else if (bytesSeen === 0) {
+    statusEl.textContent = "connected, but the board sent nothing. Press the board's reset (EN) button, " +
+      "close Arduino Serial Monitor, and check that the 1d_Teapot example is uploaded.";
+  } else {
+    statusEl.textContent = "the board is sending text, not teapot packets (" + bytesSeen + " bytes). " +
+      "Set DEBUG to 0 in Teapot.ino and upload again. If the LED blinks, count the blinks: that is the error code.";
+  }
+}
+
+async function readLoop(port) {
+  const reader = port.readable.getReader();
+  let buf = [];
+  bytesSeen = 0; packetsSeen = 0; connectedAt = Date.now();
+  watchStatus();
+  watchTimer = setInterval(watchStatus, 1000);
+  try {
+    for (;;) {
+      const {value, done} = await reader.read();
+      if (done) break;
+      bytesSeen += value.length;
+      for (const byte of value) {
+        buf.push(byte);
+        // resync: packet must start '$' 0x02
+        while (buf.length >= 2 && !(buf[0] === 0x24 && buf[1] === 0x02)) buf.shift();
+        if (buf.length >= 14) {
+          const p = buf.splice(0, 14);
+          const s16 = i => { let v = (p[i] << 8) | p[i + 1]; return v >= 32768 ? v - 65536 : v; };
+          setFromSensor(s16(2) / 16384, s16(4) / 16384, s16(6) / 16384, s16(8) / 16384);
+          packetCount++; packetsSeen++;
+        }
+      }
+    }
+    statusEl.textContent = "connection closed";
+  } catch (err) {
+    statusEl.textContent = "connection lost: " + err.message;
+  } finally {
+    clearInterval(watchTimer);
+    try { reader.releaseLock(); } catch (e) {}
+    try { await port.close(); } catch (e) {}   // so Connect board works again
+    connectBtn.disabled = false;
+  }
+}
+</script>
+</body>
+</html>

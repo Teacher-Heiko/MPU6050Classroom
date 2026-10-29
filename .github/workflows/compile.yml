@@ -1,0 +1,97 @@
+# Compiles every example for every supported board, and runs the computer
+# tests, each time code is pushed. The badge in README.md shows the result.
+name: Compile examples
+
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  computer-tests:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Run the TeachMath tests
+        run: |
+          cd extras/tests
+          g++ -std=c++17 -Wall -I ../../src test_math.cpp -o test_math
+          ./test_math
+
+  compile:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - fqbn: esp32:esp32:esp32wroverkit
+            platforms: |
+              - name: esp32:esp32
+                source-url: https://espressif.github.io/arduino-esp32/package_esp32_index.json
+            sketch-paths: |
+              - examples/ESP32
+          - fqbn: arduino:renesas_uno:unor4wifi
+            platforms: |
+              - name: arduino:renesas_uno
+            sketch-paths: |
+              - examples/Arduino
+          # Boards without Wi-Fi: all Arduino examples except level 5.
+          - fqbn: arduino:renesas_uno:minima
+            platforms: |
+              - name: arduino:renesas_uno
+            sketch-paths: |
+              - examples/Arduino/1a_WhoAmI
+              - examples/Arduino/1b_SelfTest
+              - examples/Arduino/1c_YawPitchRoll
+              - examples/Arduino/1d_Teapot
+              - examples/Arduino/2_CrashDetect
+              - examples/Arduino/2_FallDetector
+              - examples/Arduino/2_ShakeDice
+              - examples/Arduino/2_SpiritLevel
+              - examples/Arduino/2_StepCounter
+              - examples/Arduino/2_TapCounter
+              - examples/Arduino/2_TiltAlarm
+              - examples/Arduino/3_BikeTracker
+              - examples/Arduino/3_CameraGimbal
+              - examples/Arduino/3_CrashLogger
+              - examples/Arduino/3_DoorMonitor
+              - examples/Arduino/4_EarthquakeModel
+              - examples/Arduino/4_LaserTurret
+              - examples/Arduino/4_SlowLoop
+              - examples/Arduino/4_SwingAnalyser
+              - examples/Arduino/4_TurnRobot
+          - fqbn: arduino:avr:uno
+            platforms: |
+              - name: arduino:avr
+            sketch-paths: |
+              - examples/Arduino/1a_WhoAmI
+              - examples/Arduino/1b_SelfTest
+              - examples/Arduino/1c_YawPitchRoll
+              - examples/Arduino/1d_Teapot
+              - examples/Arduino/2_CrashDetect
+              - examples/Arduino/2_FallDetector
+              - examples/Arduino/2_ShakeDice
+              - examples/Arduino/2_SpiritLevel
+              - examples/Arduino/2_StepCounter
+              - examples/Arduino/2_TapCounter
+              - examples/Arduino/2_TiltAlarm
+              - examples/Arduino/3_BikeTracker
+              - examples/Arduino/3_CameraGimbal
+              - examples/Arduino/3_CrashLogger
+              - examples/Arduino/3_DoorMonitor
+              - examples/Arduino/4_EarthquakeModel
+              - examples/Arduino/4_LaserTurret
+              - examples/Arduino/4_SlowLoop
+              - examples/Arduino/4_SwingAnalyser
+              - examples/Arduino/4_TurnRobot
+    steps:
+      - uses: actions/checkout@v4
+      - uses: arduino/compile-sketches@v1
+        with:
+          fqbn: ${{ matrix.fqbn }}
+          platforms: ${{ matrix.platforms }}
+          sketch-paths: ${{ matrix.sketch-paths }}
+          libraries: |
+            - source-path: ./
+            - name: Servo
+          enable-warnings-report: true
